@@ -8,6 +8,7 @@ import NewCard from "../NewCard/NewCard";
 import EditProfile from "../EditProfile/EditProfile";
 import EditAvatar from "../EditAvatar/EditAvatar";
 import ImagePopup from "../ImagePopup/ImagePopup";
+import RemoveCard from "../RemoveCard/RemoveCard";
 
 const cards = [
   {
@@ -27,6 +28,7 @@ const cards = [
 export default function Main() {
   const [popup, setPopup] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [cardToDelete, setCardToDelete] = useState(null);
 
   const newCardPopup = { title: "Nuevo lugar", children: <NewCard /> };
   const editProfilePopup = {
@@ -49,6 +51,26 @@ export default function Main() {
   function handleClosePopup() {
     setPopup(null);
     setSelectedCard(null);
+    setCardToDelete(null);
+  }
+
+  function handleDeleteClick(card) {
+    setCardToDelete(card);
+    handleOpenPopup({
+      title: "¿Estás seguro?",
+      children: (
+        <RemoveCard
+          card={card}
+          onDeleteCard={handleDelete}
+          onClose={handleClosePopup}
+        />
+      ),
+    });
+  }
+
+  function handleDelete(card) {
+    console.log("Eliminando tarjeta desde Main:", card);
+    handleClosePopup();
   }
 
   return (
@@ -90,17 +112,28 @@ export default function Main() {
 
       <div className="main__gallery">
         {cards.map((card) => (
-          <Card key={card._id} card={card} onCardClick={handleCardClick} />
+          <Card
+            key={card._id}
+            card={card}
+            onCardClick={handleCardClick}
+            onCardDelete={handleDeleteClick}
+          />
         ))}
       </div>
 
-      {popup && (
-        <Popup onClose={handleClosePopup} title={popup.title}>
-          {popup.children}
+      {(popup || selectedCard) && (
+        <Popup
+          isOpen={!!popup || !!selectedCard}
+          onClose={handleClosePopup}
+          title={popup?.title || ""}
+          name={
+            popup ? popup.title.toLowerCase().replace(/\s+/g, "-") : "image"
+          }
+          containerClass={selectedCard ? "popup__container_image" : ""}
+        >
+          {popup ? popup.children : <ImagePopup card={selectedCard} />}
         </Popup>
       )}
-
-      <ImagePopup card={selectedCard} onClose={handleClosePopup} />
     </main>
   );
 }

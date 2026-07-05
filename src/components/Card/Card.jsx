@@ -1,4 +1,4 @@
-export default function Card({ card, onCardClick }) {
+export default function Card({ card, onCardClick, onCardDelete }) {
   const { name, link } = card;
 
   return (
@@ -13,6 +13,7 @@ export default function Card({ card, onCardClick }) {
         className="main__button main__button_trash"
         type="button"
         aria-label="Delete card"
+        onClick={() => onCardDelete(card)}
       ></button>
       <div className="main__gallery-content">
         <p className="main__gallery-paragraph">{name}</p>
