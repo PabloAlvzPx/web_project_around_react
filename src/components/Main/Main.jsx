@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { CurrentUserContext } from "../../contexts/CurrentUserContext";
 import avatar from "../../images/yo.jpg";
 import editIcon from "../../images/edit.svg";
 
@@ -8,29 +9,24 @@ import NewCard from "../NewCard/NewCard";
 import EditProfile from "../EditProfile/EditProfile";
 import EditAvatar from "../EditAvatar/EditAvatar";
 import ImagePopup from "../ImagePopup/ImagePopup";
-import RemoveCard from "../RemoveCard/RemoveCard";
+import ConfirmDelete from "../ConfirmDelete/ConfirmDelete";
 
-const cards = [
-  {
-    isLiked: false,
-    _id: "5d1f0611d321eb4bdcd707dd",
-    name: "Yosemite Valley",
-    link: "https://practicum-content.s3.us-west-1.amazonaws.com/web-code/moved_yosemite.jpg",
-  },
-  {
-    isLiked: false,
-    _id: "5d1f064ed321eb4bdcd707de",
-    name: "Lake Louise",
-    link: "https://practicum-content.s3.us-west-1.amazonaws.com/web-code/moved_lake-louise.jpg",
-  },
-];
-
-export default function Main() {
-  const [popup, setPopup] = useState(null);
+export default function Main({
+  popup,
+  onOpenPopup,
+  onClosePopup,
+  cards,
+  onCardLike,
+  onCardDelete,
+  onAddPlace,
+}) {
+  const { currentUser } = useContext(CurrentUserContext);
   const [selectedCard, setSelectedCard] = useState(null);
-  const [cardToDelete, setCardToDelete] = useState(null);
 
-  const newCardPopup = { title: "Nuevo lugar", children: <NewCard /> };
+  const newCardPopup = {
+    title: "Nuevo lugar",
+    children: <NewCard onAddPlace={onAddPlace} />,
+  };
   const editProfilePopup = {
     title: "Editar perfil",
     children: <EditProfile />,
@@ -40,37 +36,20 @@ export default function Main() {
     children: <EditAvatar />,
   };
 
-  function handleOpenPopup(popupConfig) {
-    setPopup(popupConfig);
-  }
-
   function handleCardClick(card) {
     setSelectedCard(card);
   }
 
-  function handleClosePopup() {
-    setPopup(null);
+  function handleCloseAll() {
+    onClosePopup();
     setSelectedCard(null);
-    setCardToDelete(null);
   }
 
-  function handleDeleteClick(card) {
-    setCardToDelete(card);
-    handleOpenPopup({
-      title: "¿Estás seguro?",
-      children: (
-        <RemoveCard
-          card={card}
-          onDeleteCard={handleDelete}
-          onClose={handleClosePopup}
-        />
-      ),
+  function handleCardDeleteClick(card) {
+    onOpenPopup({
+      title: "¿Estás seguro/a?",
+      children: <ConfirmDelete card={card} onDeleteConfirm={onCardDelete} />,
     });
-  }
-
-  function handleDelete(card) {
-    console.log("Eliminando tarjeta desde Main:", card);
-    handleClosePopup();
   }
 
   return (
@@ -78,24 +57,28 @@ export default function Main() {
       <div className="main__profile">
         <div className="main__content-image">
           <img
-            src={avatar}
+            src={currentUser?.avatar || avatar}
             alt="Profile image"
             className="main__profile-image"
           />
           <button
             type="button"
             className="main__profile-image-overlay"
-            onClick={() => handleOpenPopup(editAvatarPopup)}
+            onClick={() => onOpenPopup(editAvatarPopup)}
           ></button>
         </div>
 
         <div className="main__content-paragraph">
-          <p className="main__paragraph main__paragraph_name">Pablo Alvarez</p>
-          <p className="main__paragraph main__paragraph_about">Estudiante</p>
+          <p className="main__paragraph main__paragraph_name">
+            {currentUser?.name || "Cargando..."}
+          </p>
+          <p className="main__paragraph main__paragraph_about">
+            {currentUser?.about || "Cargando..."}
+          </p>
           <button
             type="button"
             className="main__button main__button_edit"
-            onClick={() => handleOpenPopup(editProfilePopup)}
+            onClick={() => onOpenPopup(editProfilePopup)}
           >
             <img src={editIcon} alt="Edit Button" />
           </button>
@@ -104,7 +87,7 @@ export default function Main() {
         <button
           type="button"
           className="main__button main__button_add"
-          onClick={() => handleOpenPopup(newCardPopup)}
+          onClick={() => onOpenPopup(newCardPopup)}
         >
           +
         </button>
@@ -116,7 +99,8 @@ export default function Main() {
             key={card._id}
             card={card}
             onCardClick={handleCardClick}
-            onCardDelete={handleDeleteClick}
+            onCardLike={onCardLike}
+            onCardDelete={handleCardDeleteClick}
           />
         ))}
       </div>
@@ -124,14 +108,15 @@ export default function Main() {
       {(popup || selectedCard) && (
         <Popup
           isOpen={!!popup || !!selectedCard}
-          onClose={handleClosePopup}
+          onClose={handleCloseAll}
           title={popup?.title || ""}
           name={
             popup ? popup.title.toLowerCase().replace(/\s+/g, "-") : "image"
           }
           containerClass={selectedCard ? "popup__container_image" : ""}
         >
-          {popup ? popup.children : <ImagePopup card={selectedCard} />}
+          {popup && popup.children}
+          {selectedCard && <ImagePopup card={selectedCard} />}
         </Popup>
       )}
     </main>
